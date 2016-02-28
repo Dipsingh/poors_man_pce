@@ -5,6 +5,7 @@ from plain_dijkstra import Copy_all_shortest_paths_plain as Copy_all_shortest_pa
 from exclude_link_dijkstra import Copy_all_shortest_paths_exclude_link as Copy_all_shortest_paths_exclude_link
 from bandwidth_constraint_dijkstra import Copy_all_shortest_paths_bwconstraint as Copy_all_shortest_paths_bwconstraint
 from bwconstraint_excludelink_dijkstra import Copy_all_shortest_paths_bwconstraint_excludelink as Copy_all_shortest_paths_bwconstraint_excludelink
+from avoid_node import Copy_all_shortest_paths_avoidnode as Copy_all_shortest_paths_avoidnode
 from networkx.readwrite import json_graph
 from networkx_viewer import Viewer
 
@@ -132,14 +133,16 @@ def draw_graph(graph_nodes):
     app=Viewer(graph_nodes)
     app.mainloop()
 
-def spf(graph_nodes,node_a,node_b,weight,color=None,color_exc_inc=None,bw_constraint=None):
+def spf(graph_nodes,node_a,node_b,weight,color=None,color_exc_inc=None,bw_constraint=None,avoid_node=None):
 
-    if color_exc_inc and bw_constraint:
+    if (color_exc_inc and bw_constraint):
         path_list = Copy_all_shortest_paths_bwconstraint_excludelink(graph_nodes,source=node_a,target=node_b,weight=weight,color=color,color_exc_inc=color_exc_inc,bw_constraint=bw_constraint)
     elif color_exc_inc:
         path_list = Copy_all_shortest_paths_exclude_link(graph_nodes,source=node_a,target=node_b,weight=weight,color=color,color_exc_inc=color_exc_inc)
     elif bw_constraint:
         path_list = Copy_all_shortest_paths_bwconstraint(graph_nodes,source=node_a,target=node_b,weight=weight,bw_constraint=bw_constraint)
+    elif avoid_node:
+        path_list = Copy_all_shortest_paths_avoidnode(graph_nodes,source=node_a,target=node_b,weight=weight,avoid_node=avoid_node)
     else:
         path_list = Copy_all_shortest_paths_plain(graph_nodes,source=node_a,target=node_b,weight=weight)
 
@@ -171,10 +174,12 @@ def main():
         graph_nodes.add_edge(source,dest,key=tuple((source,dest)),attr_dict=edge_dict[source,dest])
     node_name_a= 'por'
     node_name_b= 'san'
+    avoid_node_name = 'min'
     color = 'blue'
     color_exc_inc = 'exclude'
     bw_constraint=12500
-    path_list = spf(graph_nodes,find_node_id(graph_nodes,node_name_a),find_node_id(graph_nodes,node_name_b),'igp_metric',color=color,color_exc_inc=color_exc_inc,bw_constraint=bw_constraint)
+    avoid_node_id = find_node_id(graph_nodes,avoid_node_name)
+    path_list = spf(graph_nodes,find_node_id(graph_nodes,node_name_a),find_node_id(graph_nodes,node_name_b),'igp_metric',avoid_node=avoid_node_id)
     for p in path_list:
         print (p)
     #draw_graph(graph_nodes)
