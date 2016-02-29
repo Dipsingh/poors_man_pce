@@ -7,6 +7,6 @@ Working on a small prototype for PCE Code for learning purposes.Right now it use
 
 3) Available BW as a Constraint.
 
-4) Availablw BW + (Avoid or Include a certain Link as constraint).
+4) Available BW + (Avoid or Include a certain Link as constraint).
 
 5) Avoid a Node
