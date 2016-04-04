@@ -256,6 +256,12 @@ def main():
             pobj_send=pickle.dumps(path_list,3)
             server_socket.send(pobj_send)
 
+        if extract_code[0] == 'push_path':
+            print ("extract_code",extract_code[1:])
+            status_code="Message Recieved"
+            pobj_send=pickle.dumps(status_code,3)
+            server_socket.send(pobj_send)
+
 
 
 if __name__ == "__main__":

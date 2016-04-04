@@ -18,6 +18,7 @@ class PceShell(cmd.Cmd):
         self.code_run_spf_avoid_node="run_spf_avoid_node"
         self.code_run_spf_avoid_node_color="run_spf_avoid_node_color"
         self.code_run_spf_avoid_color="run_spf_avoid_color"
+        self.code_provision_path = "push_path"
         super().__init__()
 
     def show_nodes(self):
@@ -38,6 +39,30 @@ class PceShell(cmd.Cmd):
 
         return result
 
+    def convert_list_to_str(self,node_list):
+        node_list_str=str()
+        for node in node_list:
+            node_list_str = node_list_str+" "+node
+        return node_list_str
+
+    def push_path(self,path_id,path_dict):
+        print ("you entered",path_id)
+        push_path_obj=self.code_provision_path+self.convert_list_to_str(path_dict[int(path_id)])
+        pobj_send = pickle.dumps(push_path_obj)
+        self.client_socket.send(pobj_send)
+        pobj_recv=self.client_socket.recv()
+        status_code=pickle.loads(pobj_recv)
+        print ("Provisioning of path was",status_code)
+
+    def print_path_return_path_dict(self,path_list):
+        i=1
+        path_dict= {}
+        for path in path_list:
+            print ("Path {} is {} ".format(i,path))
+            path_dict[i]=path
+            i=i+1
+        return path_dict
+
     def run_spf(self,nodes,avoid=None,link_color=None):
         """ Find the shortest path between nodes A and B and Optionally Avoid node C if given"""
         #print ("Enter the Node A and B ")
@@ -55,8 +80,14 @@ class PceShell(cmd.Cmd):
             pobj_recv = self.client_socket.recv()
             path_list = pickle.loads(pobj_recv)
             if path_list:
-                for path in path_list:
-                    print ("Paths are ",path)
+                path_dict= self.print_path_return_path_dict(path_list)
+                user_input=input("Please Enter Path ID if you want to push the path or hit Enter to Exit: ")
+                if user_input:
+                    if int(user_input) <= len(path_list):
+                        self.push_path(user_input,path_dict)
+                    else:
+                        print ("You entered a path out of the range")
+                        os._exit(1)
             else:
                 print ("No Paths found")
         elif avoid is not None and link_color is None:
@@ -82,8 +113,14 @@ class PceShell(cmd.Cmd):
             pobj_recv = self.client_socket.recv()
             path_list = pickle.loads(pobj_recv)
             if path_list:
-                for path in path_list:
-                    print ("Paths are ",path)
+                path_dict= self.print_path_return_path_dict(path_list)
+                user_input=input("Please Enter Path ID if you want to push the path or hit Enter to Exit: ")
+                if user_input:
+                    if int(user_input) <= len(path_list):
+                        self.push_path(user_input,path_dict)
+                    else:
+                        print ("You entered a path out of the range")
+                        os._exit(1)
             else:
                 print ("No Paths found")
 
@@ -100,9 +137,7 @@ class PceShell(cmd.Cmd):
                     print ("Its an Invalid Node.Please enter a valid node from Topology")
                     os._exit(1)
 
-            avoid_node = str()
-            for node in avoid:
-                avoid_node= avoid_node+" "+ node
+            avoid_node = self.convert_list_to_str(avoid)
 
             request_spf = self.code_run_spf_avoid_node_color+" "+nodes[0]+" "+nodes[1]+avoid_node+" "+link_color[0]+" "+link_color[1]
             pobj_send = pickle.dumps(request_spf)
@@ -110,8 +145,14 @@ class PceShell(cmd.Cmd):
             pobj_recv = self.client_socket.recv()
             path_list = pickle.loads(pobj_recv)
             if path_list:
-                for path in path_list:
-                    print ("Paths are ",path)
+               path_dict= self.print_path_return_path_dict(path_list)
+               user_input=input("Please Enter Path ID if you want to push the path or hit Enter to Exit: ")
+               if user_input:
+                   if int(user_input) <= len(path_list):
+                       self.push_path(user_input,path_dict)
+                   else:
+                       print ("You entered a path out of the range")
+                       os._exit(1)
             else:
                 print ("No Paths found")
 
@@ -129,11 +170,20 @@ class PceShell(cmd.Cmd):
             pobj_recv = self.client_socket.recv()
             path_list = pickle.loads(pobj_recv)
             if path_list:
-                for path in path_list:
-                    print ("Paths are ",path)
+                path_dict= self.print_path_return_path_dict(path_list)
+                user_input=input("Please Enter Path ID if you want to push the path or hit Enter to Exit: ")
+                if user_input:
+                    if int(user_input) <= len(path_list):
+                        self.push_path(user_input,path_dict)
+                    else:
+                        print ("You entered a path out of the range")
+                        os._exit(1)
+                else:
+                    print ("He Pressed enter")
+                    os._exit(1)
+
             else:
                 print ("No Paths found")
-
 
 def main():
     pceshell=PceShell()
