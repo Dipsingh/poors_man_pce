@@ -126,4 +126,20 @@ def Query_check_node(node_name):
 
     return(check_node_result)
 
-
+def Query_node_ip_sid(node_name):
+    db_filename = 'pce.db'
+    try:
+        conn=lite.connect(nodes_db)
+        cur = conn.cursor()
+        cur.execute("SELECT ROUTER_ID,SR_ID FROM NODES WHERE NODE_NAME=:NODE_NAME",{"NODE_NAME":node_name})
+        conn.commit()
+        node_ip_sid = cur.fetchone()
+    except:
+        if conn:
+            conn.rollback()
+        print ("Error Occured while Querying Node IP")
+        sys.exit(1)
+    finally:
+        if conn:
+            conn.close()
+    return (node_ip_sid[0],node_ip_sid[1])

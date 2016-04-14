@@ -1,8 +1,8 @@
-import json
+import json,math
 import networkx as nx
 import re
 import dboperations
-import zmq,pickle
+import zmq,pickle,functions_dict
 from plain_dijkstra import Copy_all_shortest_paths_plain as Copy_all_shortest_paths_plain
 from exclude_link_dijkstra import Copy_all_shortest_paths_exclude_link as Copy_all_shortest_paths_exclude_link
 from bandwidth_constraint_dijkstra import Copy_all_shortest_paths_bwconstraint as Copy_all_shortest_paths_bwconstraint
@@ -11,6 +11,7 @@ from avoid_node import Copy_all_shortest_paths_avoidnode as Copy_all_shortest_pa
 from avoid_node_link_color import Copy_all_shortest_paths_avoidnode_linkcolor
 from networkx.readwrite import json_graph
 from networkx_viewer import Viewer
+from pcep.pce_controller import *
 
 def extract_routerid(str):
     rg = re.compile("router=(.*)",re.IGNORECASE|re.DOTALL)
@@ -41,7 +42,6 @@ class Node(object):
 
     def add_prefix_metric(self,prefix,metric):
         self.prefix_metric[prefix] = metric
-
     @classmethod
     def get_instance(cls):
         return cls._instance_track
@@ -136,6 +136,7 @@ def draw_graph(graph_nodes):
     app=Viewer(graph_nodes)
     app.mainloop()
 
+'''
 def spf(graph_nodes,node_a,node_b,weight,color=None,color_exc_inc=None,bw_constraint=None,avoid_node=None):
 
     if (color_exc_inc and bw_constraint):
@@ -159,30 +160,18 @@ def spf(graph_nodes,node_a,node_b,weight,color=None,color_exc_inc=None,bw_constr
                 temp_list.append(dboperations.Query_node_name(x))
             node_name_list.append(temp_list)
     return (node_name_list)
-
-'''
-# Dont Need these Functions as we are going to store Attributes in SQLITE DB Which will avoid Iterating over the Graphs Everytime
-
-def find_node_id(graph_nodes,node_name):
-    for node_id,node_attr in graph_nodes.nodes_iter(data=True):
-        if node_attr['name'] == node_name:
-            node_id_a = node_id
-    return (node_id_a)
-
-def find_node_name(graph_nodes,node_id_tofind):
-    for node_id,node_attr in graph_nodes.nodes_iter(data=True):
-        if node_id == node_id_tofind:
-            node_name = node_attr['name']
-    return (node_name)
 '''
 
 def main():
+    func_dict = dict()
     graph_nodes=parse_nodes('bgp_ls_all_topo.json')
     edge_dict = parse_links('bgp_ls_all_topo.json')
     for source,dest in edge_dict:
         graph_nodes.add_edge(source,dest,key=tuple((source,dest)),attr_dict=edge_dict[source,dest])
 
     dboperations.Create_initial_db(graph_nodes)
+
+    '''
     node_name_a= 'por'
     node_name_b= 'san'
     avoid_node_name = 'sjc'
@@ -190,19 +179,25 @@ def main():
     color_exc_inc = 'exclude'
     bw_constraint=12500
     avoid_node_id = dboperations.Query_node_id(avoid_node_name)
-    path_list = spf(graph_nodes,dboperations.Query_node_id(node_name_a),dboperations.Query_node_id(node_name_b),'igp_metric',color=color,color_exc_inc=color_exc_inc,avoid_node=avoid_node_id)
+    #path_list = spf(graph_nodes,dboperations.Query_node_id(node_name_a),dboperations.Query_node_id(node_name_b),'igp_metric',color=color,color_exc_inc=color_exc_inc,avoid_node=avoid_node_id)
 
-    '''
     for p in path_list:
         print (p)
     #draw_graph(graph_nodes)
     #nx.write_gpickle(graph_nodes,"draw_graph.gpickle")
-
     '''
+
     server_port = "5559"
     server_context = zmq.Context()
     server_socket= server_context.socket(zmq.REP)
     server_socket.bind("tcp://*:%s" % server_port)
+    func_dict['show_nodes'] = functions_dict.show_nodes
+    func_dict['check_node'] = functions_dict.check_nodes
+    func_dict['run_spf'] = functions_dict.run_spf
+    func_dict['run_spf_avoid_node'] = functions_dict.run_spf_avoid_node
+    func_dict['run_spf_avoid_node_color'] = functions_dict.run_spf_avoid_node_color
+    func_dict['run_spf_avoid_color'] = functions_dict.run_spf_avoid_color
+    func_dict['push_path'] = functions_dict.pcep_interface
 
     while True:
         pickle_recv = server_socket.recv()
@@ -211,57 +206,41 @@ def main():
         extract_code=server_message.split(" ")
 
         if extract_code[0] == 'show_nodes':
-            node_names = dboperations.Query_all_nodes()
+            node_names = func_dict['show_nodes']()
             pobj=pickle.dumps(node_names,3)
             server_socket.send(pobj)
 
         if extract_code[0] == 'check_node':
-            result = dboperations.Query_check_node(extract_code[1])
+            result = func_dict['check_node'](extract_code[1])
             pobj_send=pickle.dumps(result,3)
             server_socket.send(pobj_send)
 
         if extract_code[0] == 'run_spf':
-            src_node = extract_code[1]
-            dst_node = extract_code[2]
-            path_list = spf(graph_nodes,dboperations.Query_node_id(src_node),dboperations.Query_node_id(dst_node),'igp_metric')
+            path_list = func_dict['run_spf'](graph_nodes,extract_code[1],extract_code[2],metric='igp_metric')
             pobj_send=pickle.dumps(path_list,3)
             server_socket.send(pobj_send)
 
         if extract_code[0] == 'run_spf_avoid_node':
-            src_node = extract_code[1]
-            dst_node = extract_code[2]
-            avoid_node_name=extract_code[3]
-            avoid_node_id = dboperations.Query_node_id(avoid_node_name)
-            path_list = spf(graph_nodes,dboperations.Query_node_id(src_node),dboperations.Query_node_id(dst_node),'igp_metric',avoid_node=avoid_node_id)
+            path_list = func_dict['run_spf_avoid_node'](graph_nodes,extract_code[1],extract_code[2],extract_code[3],metric='igp_metric')
             pobj_send=pickle.dumps(path_list,3)
             server_socket.send(pobj_send)
 
         if extract_code[0] == 'run_spf_avoid_node_color':
-            src_node = extract_code[1]
-            dst_node = extract_code[2]
-            avoid_node_name=extract_code[3]
-            color_exc_inc = extract_code[4]
-            color = extract_code[5]
-            avoid_node_id = dboperations.Query_node_id(avoid_node_name)
-            path_list = spf(graph_nodes,dboperations.Query_node_id(src_node),dboperations.Query_node_id(dst_node),'igp_metric',color=color,color_exc_inc=color_exc_inc,avoid_node=avoid_node_id)
+            path_list = func_dict['run_spf_avoid_node_color'](graph_nodes,extract_code[1],extract_code[2],extract_code[3],extract_code[4],extract_code[5],metric='igp_metric')
             pobj_send=pickle.dumps(path_list,3)
             server_socket.send(pobj_send)
 
         if extract_code[0] == 'run_spf_avoid_color':
-            src_node = extract_code[1]
-            dst_node = extract_code[2]
-            color_exc_inc = extract_code[3]
-            color = extract_code[4]
-            path_list = spf(graph_nodes,dboperations.Query_node_id(src_node),dboperations.Query_node_id(dst_node),'igp_metric',color=color,color_exc_inc=color_exc_inc)
+            path_list = func_dict['run_spf_avoid_color'](graph_nodes,extract_code[1],extract_code[2],extract_code[3],extract_code[4],metric='igp_metric')
             pobj_send=pickle.dumps(path_list,3)
             server_socket.send(pobj_send)
 
         if extract_code[0] == 'push_path':
-            print ("extract_code",extract_code[1:])
+            path_list = extract_code[1:]
+            func_dict['push_path'](path_list,graph_nodes)
             status_code="Message Recieved"
             pobj_send=pickle.dumps(status_code,3)
             server_socket.send(pobj_send)
-
 
 
 if __name__ == "__main__":
