@@ -1,17 +1,12 @@
 import json,math
 import networkx as nx
-import re
+import re,threading
 import dboperations
 import zmq,pickle,functions_dict
-from plain_dijkstra import Copy_all_shortest_paths_plain as Copy_all_shortest_paths_plain
-from exclude_link_dijkstra import Copy_all_shortest_paths_exclude_link as Copy_all_shortest_paths_exclude_link
-from bandwidth_constraint_dijkstra import Copy_all_shortest_paths_bwconstraint as Copy_all_shortest_paths_bwconstraint
-from bwconstraint_excludelink_dijkstra import Copy_all_shortest_paths_bwconstraint_excludelink as Copy_all_shortest_paths_bwconstraint_excludelink
-from avoid_node import Copy_all_shortest_paths_avoidnode as Copy_all_shortest_paths_avoidnode
-from avoid_node_link_color import Copy_all_shortest_paths_avoidnode_linkcolor
 from networkx.readwrite import json_graph
 from networkx_viewer import Viewer
 from pcep.pce_controller import *
+import message_broker
 
 def extract_routerid(str):
     rg = re.compile("router=(.*)",re.IGNORECASE|re.DOTALL)
@@ -45,6 +40,33 @@ class Node(object):
     @classmethod
     def get_instance(cls):
         return cls._instance_track
+
+class ThreadingPCEPFunction(object):
+    """ This class Daemonize the thread
+    """
+    def __init__(self,interval=1):
+        self.interval =  interval
+        thread=threading.Thread(target=self.run)
+        thread.daemon = True
+        thread.start()
+
+    def run(self):
+        while True:
+            pcep_main()
+
+class ThreadingBrokerFunction(object):
+    """ This class Daemonize the thread
+    """
+    def __init__(self,interval=1):
+        self.interval =  interval
+        thread=threading.Thread(target=self.run)
+        thread.daemon = True
+        thread.start()
+
+    def run(self):
+        while True:
+            message_broker.broker_main()
+
 
 def parse_links(bgpls_config_file):
     with open(bgpls_config_file) as data_file:
@@ -136,32 +158,6 @@ def draw_graph(graph_nodes):
     app=Viewer(graph_nodes)
     app.mainloop()
 
-'''
-def spf(graph_nodes,node_a,node_b,weight,color=None,color_exc_inc=None,bw_constraint=None,avoid_node=None):
-
-    if (color_exc_inc and bw_constraint):
-        path_list = Copy_all_shortest_paths_bwconstraint_excludelink(graph_nodes,source=node_a,target=node_b,weight=weight,color=color,color_exc_inc=color_exc_inc,bw_constraint=bw_constraint)
-    elif(color_exc_inc and avoid_node):
-        path_list = Copy_all_shortest_paths_avoidnode_linkcolor(graph_nodes,source=node_a,target=node_b,weight=weight,avoid_node=avoid_node,color=color,color_exc_inc=color_exc_inc)
-    elif color_exc_inc:
-        path_list = Copy_all_shortest_paths_exclude_link(graph_nodes,source=node_a,target=node_b,weight=weight,color=color,color_exc_inc=color_exc_inc)
-    elif bw_constraint:
-        path_list = Copy_all_shortest_paths_bwconstraint(graph_nodes,source=node_a,target=node_b,weight=weight,bw_constraint=bw_constraint)
-    elif avoid_node:
-        path_list = Copy_all_shortest_paths_avoidnode(graph_nodes,source=node_a,target=node_b,weight=weight,avoid_node=avoid_node)
-    else:
-        path_list = Copy_all_shortest_paths_plain(graph_nodes,source=node_a,target=node_b,weight=weight)
-
-    node_name_list = list()
-    if path_list:
-        for p in path_list:
-            temp_list = list()
-            for x in p:
-                temp_list.append(dboperations.Query_node_name(x))
-            node_name_list.append(temp_list)
-    return (node_name_list)
-'''
-
 def main():
     func_dict = dict()
     graph_nodes=parse_nodes('bgp_ls_all_topo.json')
@@ -170,6 +166,10 @@ def main():
         graph_nodes.add_edge(source,dest,key=tuple((source,dest)),attr_dict=edge_dict[source,dest])
 
     dboperations.Create_initial_db(graph_nodes)
+
+    pcep_start = ThreadingPCEPFunction()
+    broker_start = ThreadingBrokerFunction()
+
 
     '''
     node_name_a= 'por'
@@ -198,6 +198,8 @@ def main():
     func_dict['run_spf_avoid_node_color'] = functions_dict.run_spf_avoid_node_color
     func_dict['run_spf_avoid_color'] = functions_dict.run_spf_avoid_color
     func_dict['push_path'] = functions_dict.pcep_interface
+    print ("Starting PCEP")
+
 
     while True:
         pickle_recv = server_socket.recv()

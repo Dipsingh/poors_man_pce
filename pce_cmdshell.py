@@ -72,7 +72,6 @@ class PceShell(cmd.Cmd):
                 print ("You entered a path out of the range")
                 os._exit(1)
 
-
     def run_spf(self,nodes,avoid=None,link_color=None):
         """ Find the shortest path between nodes A and B and Optionally Avoid node C if given"""
         #print ("Enter the Node A and B ")
