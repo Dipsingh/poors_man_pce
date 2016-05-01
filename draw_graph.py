@@ -11,6 +11,7 @@ def draw_graph(graph_nodes):
     app.mainloop()
 
 def main():
+    '''
     context = zmq.Context()
     socket = context.socket(zmq.SUB)
     socket.connect("tcp://localhost:%s" % port)
@@ -23,7 +24,7 @@ def main():
         string = socket.recv()
         graph_nodes=nx.read_gpickle(string)
         draw_graph(graph_nodes)
-
+    '''
 
 if __name__=="__main__":
     main()

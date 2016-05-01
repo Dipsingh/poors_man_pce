@@ -1,12 +1,19 @@
 import json,math
 import networkx as nx
-import re,threading
-import dboperations
+import re,threading,requests
+import dboperations,httplib2
 import zmq,pickle,functions_dict
 from networkx.readwrite import json_graph
 from networkx_viewer import Viewer
 from pcep.pce_controller import *
 import message_broker
+
+ODL_IP="192.168.24.129"
+ODL_PORT="8181"
+ODL_USERNAME="admin"
+ODL_PASSWORD="admin"
+JSON_FILE_NAME="bgp_ls_topo_data.json"
+base_url = "http://192.18.1.80:8181/restconf/operational/network-topology:network-topology"
 
 def extract_routerid(str):
     rg = re.compile("router=(.*)",re.IGNORECASE|re.DOTALL)
@@ -66,7 +73,6 @@ class ThreadingBrokerFunction(object):
     def run(self):
         while True:
             message_broker.broker_main()
-
 
 def parse_links(bgpls_config_file):
     with open(bgpls_config_file) as data_file:
@@ -160,8 +166,18 @@ def draw_graph(graph_nodes):
 
 def main():
     func_dict = dict()
-    graph_nodes=parse_nodes('bgp_ls_all_topo.json')
-    edge_dict = parse_links('bgp_ls_all_topo.json')
+    '''
+    response= requests.get(base_url,auth=requests.auth.HTTPBasicAuth(ODL_USERNAME,ODL_PASSWORD))
+    json_data=json.loads(response.text)
+    with open(JSON_FILE_NAME,'w') as f:
+        json.dump(json_data,f,indent=2)
+    graph_nodes=parse_nodes(JSON_FILE_NAME)
+    edge_dict = parse_links(JSON_FILE_NAME)
+    '''
+
+    graph_nodes=parse_nodes('bgp_ls_topo_data.json')
+    edge_dict = parse_links('bgp_ls_topo_data.json')
+
     for source,dest in edge_dict:
         graph_nodes.add_edge(source,dest,key=tuple((source,dest)),attr_dict=edge_dict[source,dest])
 
@@ -170,7 +186,8 @@ def main():
     pcep_start = ThreadingPCEPFunction()
     broker_start = ThreadingBrokerFunction()
 
-
+    #draw_graph(graph_nodes)
+    #nx.write_gpickle(graph_nodes,"draw_graph.gpickle")
     '''
     node_name_a= 'por'
     node_name_b= 'san'
@@ -238,8 +255,9 @@ def main():
             server_socket.send(pobj_send)
 
         if extract_code[0] == 'push_path':
-            path_list = extract_code[1:]
-            func_dict['push_path'](path_list,graph_nodes)
+            sr_te=extract_code[1]
+            path_list = extract_code[2:]
+            func_dict['push_path'](path_list,graph_nodes,sr_te)
             status_code="Message Recieved"
             pobj_send=pickle.dumps(status_code,3)
             server_socket.send(pobj_send)

@@ -16,7 +16,6 @@ PCEADDR='0.0.0.0'
 PCEPORT=4189
 
 def parse_config(pce_config_file):
-
     SR_TE = False
     TunnelName =''
     ERO_LIST = list() # ERO List
@@ -79,7 +78,6 @@ def callback(ch, method, properties,body):
 
 
 def pcc_handler(client_sock,sid,controller):
-
     PCE_INIT_FlAG= True
     PCE_UPD_FLAG = False
     pcep_context = PCEP(open_sid = sid)
@@ -105,6 +103,7 @@ def pcc_handler(client_sock,sid,controller):
                         print ("Sending PCC Update Request")
                         if pcep_msg_upd:
                             client_sock[0].send(pcep_msg_upd)
+        '''
         if PCE_INIT_FlAG:
             if parsed_results[0]:
                 pcep_msg_init = pcep_context.generate_sr_lsp_inititate_msg(parsed_results[5],parsed_results[2],parsed_results[3],parsed_results[1])
@@ -117,16 +116,21 @@ def pcc_handler(client_sock,sid,controller):
                 if pcep_msg_init:
                     client_sock[0].send(pcep_msg_init)
             PCE_INIT_FlAG=False
+        '''
     client_sock[0].close()
 
-
 def push_sr_tunnel(client_sock,parsed_results,pcep_context):
-    if parsed_results[0]:
+    print ("All the Client Sockets are",client_sock)
+    if parsed_results[0]=='True':
         pcep_msg_init = pcep_context.generate_sr_lsp_inititate_msg(parsed_results[5],parsed_results[2],parsed_results[3],str.encode(parsed_results[1]))
         print ("Creating SR TE Tunnel")
         if pcep_msg_init:
             client_sock[0].send(pcep_msg_init)
-
+    else:
+        pcep_msg_init = pcep_context.generate_lsp_inititate_msg(parsed_results[4],parsed_results[2],parsed_results[3],str.encode(parsed_results[1]))
+        print ("Creating TE Tunnel")
+        if pcep_msg_init:
+            client_sock[0].send(pcep_msg_init)
 
 
 def subscribe_to_pce(client_sock,pcep_context):
@@ -138,13 +142,12 @@ def subscribe_to_pce(client_sock,pcep_context):
     while True:
         try:
             parsed_results=sub_socket.recv_json()
-            print ("The Client is ",client_sock[0])
+            print ("The Client is ",client_sock[1])
             print ("Recieved Following from Pub Data",parsed_results)
             if parsed_results:
-                if client_sock[1][0] == '172.16.2.10':
+                if client_sock[1][0] == parsed_results[0]:
                     print ("The Headend Router is",parsed_results[0])
                     print ("The Data sent is ",parsed_results[1])
-                    print ("its a Match")
                     push_sr_tunnel(client_sock,parsed_results[1],pcep_context)
                 return parsed_results
         except zmq.error.Again as e:

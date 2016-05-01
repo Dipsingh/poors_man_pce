@@ -22,7 +22,7 @@ class TEController(object):
         return (None,)
 
     def handle_state_report_od(self,pcc_ip,message):
-        lsp=mpls_lsp_pb2.LSP()
+        lsp=LSP()
         first_lsp = 1
         for report_object in message[1]:
             if (report_object[0] == 'LSP_Object'):

@@ -21,8 +21,8 @@ class Node_Tunnel_Tracker(object):
         return head_end
     def __init__(self,node_name):
         self.node_name = node_name
-        self.tunnel_nu_start = 6500
-        self.tunnel_nu_end = 6599
+        self.tunnel_nu_start = 1
+        self.tunnel_nu_end = 100
         self.current=self.tunnel_nu_start
         self.gen_stat = None
 
@@ -113,6 +113,10 @@ def parse_pce_pcep_msg(pobj_recv):
             for ero in pcepmsg_json[key]:
                 for sr_ip in ero:
                     SR_ERO_LIST.append((sr_ip,ero[sr_ip]))
+        if key == 'ERO_LIST':
+            for ero in pcepmsg_json[key]:
+                for ip in ero:
+                    ERO_LIST.append((ip))
 
     return (SR_TE,str.encode(TunnelName),tuple(TUNNEL_SRC_DST),tuple(LSPA_PROPERTIES),tuple(ERO_LIST),tuple(SR_ERO_LIST))
 
@@ -120,7 +124,7 @@ def ip2long(ip):
     packedIP = socket.inet_aton(ip)
     return struct.unpack("!I",packedIP)[0]
 
-def pcep_interface(path_list,graph_nodes):
+def pcep_interface(path_list,graph_nodes,sr_te):
 
     server_port = "50000"
 
@@ -135,15 +139,17 @@ def pcep_interface(path_list,graph_nodes):
 
     #print ("Path List",path_list)
     PCEP_MSG = {}
+    ERO_LIST = []
     SR_ERO_LIST = []
     LSPA_Object = {"Hold_Priority":6,"Setup_Priority": 6,"FRR_Desired": 0}
     EndPointObject = {"Tunnel_Source":dboperations.Query_node_ip(path_list[0]),"Tunnel_Destination":dboperations.Query_node_ip(path_list[-1])}
-    SR_TE=True
+    SR_TE=sr_te
 
     for node in path_list:
         node_ip,node_sid = dboperations.Query_node_ip_sid(node)
         print (node,node_ip,node_sid)
         SR_ERO_LIST.append({node_ip:node_sid})
+        ERO_LIST.append({node_ip:0})
     try:
         Node_Tunnel_Tracker.head_ends[path_list[0]]
         tunnel_id= (next(Node_Tunnel_Tracker.head_ends[path_list[0]].gen_stat))
@@ -154,13 +160,16 @@ def pcep_interface(path_list,graph_nodes):
     except e:
         print ("Exception Occured %s" %str(e))
 
-    TunnelName = 'auto'+'_'+path_list[0]+"_"+str(tunnel_id)
+    #TunnelName = 'auto'+'_'+path_list[0]+"_"+str(tunnel_id)
+    TunnelName = str(str(path_list[0])+"_"+str(tunnel_id))
+
 
     PCEP_MSG['TunnelName'] = TunnelName
     PCEP_MSG['SR-TE'] = SR_TE
     PCEP_MSG['EndPointObject']=EndPointObject
     PCEP_MSG['LSPA_Object'] = LSPA_Object
     PCEP_MSG['SR_ERO_LIST']=SR_ERO_LIST
+    PCEP_MSG['ERO_LIST']=ERO_LIST
 
     json_obj = json.dumps(PCEP_MSG)
     parsed_result= parse_pce_pcep_msg(json_obj)

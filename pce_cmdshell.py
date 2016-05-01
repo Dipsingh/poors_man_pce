@@ -44,9 +44,9 @@ class PceShell(cmd.Cmd):
             node_list_str = node_list_str+" "+node
         return node_list_str
 
-    def push_path(self,path_id,path_dict):
+    def push_path(self,path_id,path_dict,sr_te):
         print ("you entered",path_id)
-        push_path_obj=self.code_provision_path+self.convert_list_to_str(path_dict[int(path_id)])
+        push_path_obj=self.code_provision_path+" "+sr_te+self.convert_list_to_str(path_dict[int(path_id)])
         pobj_send = pickle.dumps(push_path_obj)
         self.client_socket.send(pobj_send)
         pobj_recv=self.client_socket.recv()
@@ -65,9 +65,10 @@ class PceShell(cmd.Cmd):
     def pcep_handler(self,path_list):
         path_dict= self.print_path_return_path_dict(path_list)
         user_input=input("Please Enter Path ID if you want to push the path or hit Enter to Exit: ")
+        sr_te=input("Please Enter True or False for SR TE,False means RSVP TE will be pushed: ")
         if user_input:
             if int(user_input) <= len(path_list):
-                self.push_path(user_input,path_dict)
+                self.push_path(user_input,path_dict,sr_te)
             else:
                 print ("You entered a path out of the range")
                 os._exit(1)
