@@ -166,14 +166,7 @@ def draw_graph(graph_nodes):
 
 def main():
     func_dict = dict()
-    '''
-    response= requests.get(base_url,auth=requests.auth.HTTPBasicAuth(ODL_USERNAME,ODL_PASSWORD))
-    json_data=json.loads(response.text)
-    with open(JSON_FILE_NAME,'w') as f:
-        json.dump(json_data,f,indent=2)
-    graph_nodes=parse_nodes(JSON_FILE_NAME)
-    edge_dict = parse_links(JSON_FILE_NAME)
-    '''
+
 
     graph_nodes=parse_nodes('bgp_ls_topo_data.json')
     edge_dict = parse_links('bgp_ls_topo_data.json')
