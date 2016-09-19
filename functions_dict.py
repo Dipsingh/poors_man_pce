@@ -115,6 +115,7 @@ def parse_pce_pcep_msg(pobj_recv):
                     SR_ERO_LIST.append((sr_ip,ero[sr_ip]))
         if key == 'ERO_LIST':
             for ero in pcepmsg_json[key]:
+
                 for ip in ero:
                     ERO_LIST.append((ip))
 
@@ -127,7 +128,6 @@ def ip2long(ip):
 def pcep_interface(path_list,graph_nodes,sr_te):
 
     server_port = "50000"
-
     #server_port = "50001"
     #server_context=zmq.Context()
     #server_socket = self.server_context.socket(zmq.REP)
@@ -145,9 +145,9 @@ def pcep_interface(path_list,graph_nodes,sr_te):
     EndPointObject = {"Tunnel_Source":dboperations.Query_node_ip(path_list[0]),"Tunnel_Destination":dboperations.Query_node_ip(path_list[-1])}
     SR_TE=sr_te
 
-    for node in path_list:
+
+    for node in path_list[1:]:
         node_ip,node_sid = dboperations.Query_node_ip_sid(node)
-        print (node,node_ip,node_sid)
         SR_ERO_LIST.append({node_ip:node_sid})
         ERO_LIST.append({node_ip:0})
     try:
@@ -170,13 +170,12 @@ def pcep_interface(path_list,graph_nodes,sr_te):
     PCEP_MSG['LSPA_Object'] = LSPA_Object
     PCEP_MSG['SR_ERO_LIST']=SR_ERO_LIST
     PCEP_MSG['ERO_LIST']=ERO_LIST
-
+    print("ERO LIST: ",PCEP_MSG['ERO_LIST'])
     json_obj = json.dumps(PCEP_MSG)
     parsed_result= parse_pce_pcep_msg(json_obj)
     headend_ip = dboperations.Query_node_ip(path_list[0])
     #print ("Parsed Results for Headend",headend_ip,parsed_result)
     headend_ip_long=headend_ip
-
     final_msg = (headend_ip,parsed_result)
     serialize_parsed_result=pickle.dumps(final_msg,3)
 
@@ -189,7 +188,7 @@ def publish_to_pcep(headend,parsed_result):
     context = zmq.Context()
     pub_socket = context.socket(zmq.PUB)
     pub_socket.connect(xsub_url)
-    print ("Topic is and its type",parsed_result, type(parsed_result))
+    print ("Topic",parsed_result)
     time.sleep(1)
     #pub_socket.send_pyobj(parsed_result,protocol=3)
     #string_to_send = "%d-%s" %(headend,parsed_result)

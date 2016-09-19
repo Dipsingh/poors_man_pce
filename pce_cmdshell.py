@@ -1,4 +1,4 @@
-import cmd,os,zmq,pickle,argparse,sys,os
+import cmd,zmq,pickle,argparse,os
 
 class PceShell(cmd.Cmd):
     def __init__(self,**kwargs):
@@ -166,11 +166,8 @@ class PceShell(cmd.Cmd):
 def main():
     pceshell=PceShell()
     pce_parser=argparse.ArgumentParser(description='PCE Cmd Line Options')
-
     pce_subparser=pce_parser.add_subparsers(help='Find CSPF',dest='mode')
-
     pce_parser.add_argument('--show_nodes','-sn',action='store_true',help='Shows Node Names present in the topology')
-
     findcspf_parser=pce_subparser.add_parser('cspf',help='Find CSPF between Node A and B')
     findcspf_parser.add_argument('--find_spf','-spf',nargs=2,metavar=('src_node','dst_node'),help='Find CSPF between Nodes A and B')
     findcspf_parser.add_argument('--avoid','-a',nargs='+',help='Avoid these nodes')

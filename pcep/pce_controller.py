@@ -76,7 +76,6 @@ def callback(ch, method, properties,body):
     print(" [x] Received ",recvd_obj)
 '''
 
-
 def pcc_handler(client_sock,sid,controller):
     PCE_INIT_FlAG= True
     PCE_UPD_FLAG = False
@@ -132,7 +131,6 @@ def push_sr_tunnel(client_sock,parsed_results,pcep_context):
         if pcep_msg_init:
             client_sock[0].send(pcep_msg_init)
 
-
 def subscribe_to_pce(client_sock,pcep_context):
     xsub_url = "tcp://127.0.0.1:50001"
     context= zmq.Context()
@@ -145,17 +143,22 @@ def subscribe_to_pce(client_sock,pcep_context):
             print ("The Client is ",client_sock[1])
             print ("Recieved Following from Pub Data",parsed_results)
             if parsed_results:
+                #TODO: Need to match the Interface Client IP to HeadendIP
+                '''
                 if client_sock[1][0] == parsed_results[0]:
                     print ("The Headend Router is",parsed_results[0])
                     print ("The Data sent is ",parsed_results[1])
                     push_sr_tunnel(client_sock,parsed_results[1],pcep_context)
+                '''
+                print ("The Headend Router is",parsed_results[0])
+                print ("The Data sent is ",parsed_results[1])
+                push_sr_tunnel(client_sock,parsed_results[1],pcep_context)
                 return parsed_results
         except zmq.error.Again as e:
             if str("Resource temporarily unavailable") in e:
                 return None
             else:
                 raise ("Exception occured")
-
 
 def pcep_main ():
     print ("PCEP Thread Started")

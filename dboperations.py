@@ -18,7 +18,7 @@ def Create_initial_db(graph_nodes):
         cur.execute("CREATE INDEX index_name on NODES(NODE_NAME)")
         cur.execute("CREATE INDEX index_id on NODES(ISO_ID)")
         for node in graph_nodes.nodes(data=True):
-            node_attr= [[node[1]["name"],node[1]["iso_id"],node[1]["router_id"],0]]
+            node_attr= [[node[1]["name"],node[1]["iso_id"],node[1]["router_id"],node[1]["nodesid"]]]
             cur.executemany(insert_query,node_attr)
         conn.commit()
     except lite.Error as e:

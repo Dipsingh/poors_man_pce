@@ -742,6 +742,11 @@ class PCEP(object):
        return b"".join((common_hdr,packed_lspint_msg))
 
    def generate_lsp_inititate_msg(self,ERO_LIST,TUNNEL_SRC_DST,LSPA_PROPERTIES,TUNNEL_NAME):
+       print("ERO_LIST",ERO_LIST)
+       print("TunnelSrc",TUNNEL_SRC_DST)
+       print("LSPA",LSPA_PROPERTIES)
+       print("TunnelName",TUNNEL_NAME)
+
        size =0
        ero_ip_list = list ()
        packed_lspint_msg = b''

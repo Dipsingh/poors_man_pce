@@ -8764,7 +8764,7 @@
                   "te-default-metric": 10
                 }
               },
-              "metric": 10
+              "metric": 100
             },
             "link-id": "bgpls://IsisLevel2:0/type=link&local-as=65504&local-domain=3323134238&local-router=0000.0000.0024&remote-as=65504&remote-domain=3323134238&remote-router=0000.0000.0019&ipv4-iface=40.0.0.24&ipv4-neigh=40.0.0.19"
           },
@@ -9492,7 +9492,7 @@
                   "te-default-metric": 10
                 }
               },
-              "metric": 10
+              "metric": 100
             },
             "link-id": "bgpls://IsisLevel2:0/type=link&local-as=65504&local-domain=3323134238&local-router=0000.0000.0021&remote-as=65504&remote-domain=3323134238&remote-router=0000.0000.0020&ipv4-iface=42.0.0.21&ipv4-neigh=42.0.0.20"
           },
@@ -9996,7 +9996,7 @@
                   "te-default-metric": 10
                 }
               },
-              "metric": 10
+              "metric": 100
             },
             "link-id": "bgpls://IsisLevel2:0/type=link&local-as=65504&local-domain=3323134238&local-router=0000.0000.0024&remote-as=65504&remote-domain=3323134238&remote-router=0000.0000.0021&ipv4-iface=44.0.0.24&ipv4-neigh=44.0.0.21"
           },

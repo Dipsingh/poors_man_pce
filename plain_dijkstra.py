@@ -52,18 +52,25 @@ def copy_dijkstra(G, source, weight, pred=None, paths=None, cutoff=None,target=N
     c = count()
     fringe = []
     push(fringe, (0, next(c), source))
+
     while fringe:
+
         (d, _, v) = pop(fringe)
+
         if v in dist:
             continue  # already searched this node.
         dist[v] = d
+
         if v == target:
             break
         for u, e in G_succ[v].items():
+
             cost = weight(v, u, e)
             if cost is None:
                 continue
+            
             vu_dist = dist[v] + cost
+
             if cutoff is not None:
                 if vu_dist > cutoff:
                     continue
@@ -74,13 +81,17 @@ def copy_dijkstra(G, source, weight, pred=None, paths=None, cutoff=None,target=N
             elif u not in seen or vu_dist < seen[u]:
                 seen[u] = vu_dist
                 push(fringe, (vu_dist, next(c), u))
+
                 if paths is not None:
                     paths[u] = paths[v] + [u]
+
                 if pred is not None:
                     pred[u] = [v]
+
             elif vu_dist == seen[u]:
                 if pred is not None:
                     pred[u].append(v)
+
 
     # The optional predecessor and path dictionaries can be accessed
     # by the caller via the pred and paths objects passed as arguments.

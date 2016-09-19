@@ -17,7 +17,7 @@ def broker():
     poller.register(xsub,zmq.POLLIN)
     print ("Starting broker While Loop")
     zmq.proxy(xsub,xpub)
-    '''
+
     while True:
         socks = dict(poller.poll())
         print ("Socks are",socks)
@@ -29,7 +29,7 @@ def broker():
             message = xsub.recv_json()
             print ("[BROKER Subscription SUB message: ]", message)
             xpub.send_json(message)
-    '''
+
 
 
 def broker_main():
