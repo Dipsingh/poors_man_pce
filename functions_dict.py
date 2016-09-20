@@ -146,10 +146,21 @@ def pcep_interface(path_list,graph_nodes,sr_te):
     SR_TE=sr_te
 
 
+    '''
     for node in path_list[1:]:
         node_ip,node_sid = dboperations.Query_node_ip_sid(node)
         SR_ERO_LIST.append({node_ip:node_sid})
         ERO_LIST.append({node_ip:0})
+    '''
+
+    for i in range(0,len(path_list)-1):
+        edgeNodeA = dboperations.Query_node_id(path_list[i])
+        edgeNodeB = dboperations.Query_node_id(path_list[i+1])
+        attrAB = graph_nodes.get_edge_data(edgeNodeA,edgeNodeB)
+        remote_ip = attrAB[(edgeNodeA,edgeNodeB)].get('remote_ip',0)
+        adj_sid = attrAB[(edgeNodeA,edgeNodeB)].get('adj_sid_label',0)
+        SR_ERO_LIST.append({remote_ip:adj_sid})
+        ERO_LIST.append({remote_ip:0})
     try:
         Node_Tunnel_Tracker.head_ends[path_list[0]]
         tunnel_id= (next(Node_Tunnel_Tracker.head_ends[path_list[0]].gen_stat))
@@ -159,6 +170,7 @@ def pcep_interface(path_list,graph_nodes,sr_te):
         tunnel_id= (next(Node_Tunnel_Tracker.head_ends[path_list[0]].gen_stat))
     except e:
         print ("Exception Occured %s" %str(e))
+
 
     #TunnelName = 'auto'+'_'+path_list[0]+"_"+str(tunnel_id)
     TunnelName = str(str(path_list[0])+"_"+str(tunnel_id))
