@@ -153,7 +153,6 @@ def subscribe_to_pce(client_sock,pcep_context):
                 print ("The Headend Router is",parsed_results[0])
                 print ("The Data sent is ",parsed_results[1])
                 push_sr_tunnel(client_sock,parsed_results[1],pcep_context)
-                return parsed_results
         except zmq.error.Again as e:
             if str("Resource temporarily unavailable") in e:
                 return None
